@@ -31,3 +31,21 @@ start              | SUCCESS   | Winsock found! Status:         | Running       
 
 ========================================
 start              | SUCCESS   | Winsock found! Status:         | Running                        | 
+
+========================================
+start              | SUCCESS   | Winsock found! Status:         | Running                        | 
+get address info   | SUCCESS   | address and port resolved      | 
+socket create      | SUCCESS   | Socket created                 | 
+bind               | SUCCESS   | Binding is OK!                 | 
+
+========================================
+start              | SUCCESS   | Winsock found! Status:         | Running                        | 
+get address info   | SUCCESS   | address and port resolved      | 
+socket create      | SUCCESS   | Socket created                 | 
+bind               | SUCCESS   | Binding is OK!                 | 
+
+========================================
+start              | SUCCESS   | Winsock found! Status:         | Running                        | 
+get address info   | SUCCESS   | address and port resolved      | 
+socket create      | SUCCESS   | Socket created                 | 
+bind               | SUCCESS   | Binding is OK!                 | 
