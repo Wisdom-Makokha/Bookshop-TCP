@@ -21,7 +21,7 @@ int main(void)
         exit(EXIT_FAILURE);
 
     logsOutput.open("serverLogs.txt", std::ios::app);
-    if (logsOutput.is_open())
+    if (!logsOutput.is_open())
     {
         std::cerr << "Error opening serverLogs.txt" << std::endl;
         exit(EXIT_FAILURE);
@@ -32,7 +32,9 @@ int main(void)
     logsOutput << std::endl
                << newLogs << std::endl;
 
-    //initialise WSA
+    // initialise WSA
+    if (!initialiseWsa(&wsaData, wVersioRequested, logsOutput))
+        exit(EXIT_FAILURE);
 
     exit(EXIT_SUCCESS);
 }
@@ -50,9 +52,8 @@ bool readFileContents(book_entry *catalog, int *entries)
         // read until the file ends
         while (!readFile.eof())
         {
-            char newline;                  // newline character for when reading the next character after the serial no
             readFile >> catalog->serialNo; // serial no read
-            readFile >> newline;           // remove the newline character
+            readFile.ignore(1);            // skip the newline character on the first line
 
             readFile.getline(catalog->title, TITLE_LIMIT);                                                                                       // get the title
             readFile.getline(catalog->author, AUTHOR_LIMIT);                                                                                     // get the author
@@ -63,9 +64,6 @@ bool readFileContents(book_entry *catalog, int *entries)
             printEntry(catalog);
             catalog++;               // move to the next entry
             *entries = *entries + 1; // increase entry
-
-            // if (readFile.eof())
-            //     break;
         }
 
         result = SUCCESS;
@@ -102,47 +100,69 @@ void printEntry(book_entry *entry)
 // function to write logs for the program
 void writeLogs(error_logs logs, std::ofstream &logFile)
 {
-    std::string divider = " | "; //divider for sections
-    std::string operationMessage = logs.operationStatus ? "SUCCESS" : "FAILURE"; // 
+    std::string divider = " | ";                                                 // divider for sections
+    std::string operationMessage = logs.operationStatus ? "SUCCESS" : "FAILURE"; //
 
     char *timeLog = NULL;
-    GetCurrentTime(timeLog);
-    char *optionString = getOption(logs.option);
-    
+    getCurrentTimeLog(timeLog);
+    const char *optionString = getOption(logs.option);
+
     int optionWidth = 18;
     int opMessageWidth = 9;
     int detailWidth = 30;
     int errorResultWidth = 8;
     int errorStringWidth = 30;
 
-    //check if time log is null
-    if(timeLog != NULL)
+    // check if time log is null
+    if (timeLog != NULL)
+    {
         logFile << timeLog << divider;
-    
-    //check if option string is null
-    if(optionString != NULL)
+        if (TOGGLE_LOGS_DISPLAY)
+            std::cout << timeLog << divider;
+    }
+
+    // check if option string is null
+    if (optionString != NULL)
+    {
         logFile << std::left << std::setw(optionWidth) << optionString << divider;
+        if (TOGGLE_LOGS_DISPLAY)
+            std::cout << std::left << std::setw(optionWidth) << optionString << divider;
+    }
 
     // print the error message
     logFile << std::left << std::setw(opMessageWidth) << operationMessage << divider;
-    
+    std::cout << std::left << std::setw(opMessageWidth) << operationMessage << divider;
+
     // check if details is null
-    if(logs.details != NULL)
+    if (logs.details != NULL)
+    {
         logFile << std::left << std::setw(detailWidth) << logs.details << divider;
+        if (TOGGLE_LOGS_DISPLAY)
+            std::cout << std::left << std::setw(detailWidth) << logs.details << divider;
+    }
 
     // check if error result is null_int
-    if(logs.errorResult != NULL_INT)
+    if (logs.errorResult != NULL_INT)
+    {
         logFile << std::right << std::setw(errorResultWidth) << logs.errorResult << divider;
+        if (TOGGLE_LOGS_DISPLAY)
+            std::cout << std::right << std::setw(errorResultWidth) << logs.errorResult << divider;
+    }
 
     // check if error string is null
-    if(logs.errorString != NULL)
+    if (logs.errorString != NULL)
+    {
         logFile << std::left << std::setw(errorStringWidth) << logs.errorString << divider;
+        if (TOGGLE_LOGS_DISPLAY)
+            std::cout << std::left << std::setw(errorStringWidth) << logs.errorString << divider;
+    }
 
     logFile << std::endl;
+    std::cout << std::endl;
 }
 
 // function to get the current time
-void getTimeCurrentTimeLog(char *timeString)
+void getCurrentTimeLog(char *timeString)
 {
     // initialise time struct
     time_t currentTime;
@@ -172,7 +192,7 @@ void getTimeCurrentTimeLog(char *timeString)
 }
 
 // function to get the option message
-char *getOption(l_options option)
+const char *getOption(l_options option)
 {
     // pick message
     switch (option)
@@ -204,7 +224,7 @@ char *getOption(l_options option)
 }
 
 // function to initialise the WSA
-bool intialiseWsa(WSADATA *wsaData, WORD wVersionRequested, std::ofstream &logFile)
+bool initialiseWsa(WSADATA *wsaData, WORD wVersionRequested, std::ofstream &logFile)
 {
     error_logs logs;
     logs.option = START;
@@ -213,8 +233,23 @@ bool intialiseWsa(WSADATA *wsaData, WORD wVersionRequested, std::ofstream &logFi
 
     int wsaError = WSAStartup(wVersionRequested, wsaData);
 
-    if(wsaError != 0)
+    if (wsaError != 0)
     {
-        
+        // set up the logs
+        logs.operationStatus = FAILURE;
+        logs.details = strdup("Winsock dll not found!");
+
+        writeLogs(logs, logFile);
+        return FAILURE;
+    }
+    else
+    {
+        // set up the logs
+        logs.operationStatus = SUCCESS;
+        logs.details = strdup("Winsock found! Status: ");
+        logs.errorString = strdup((*wsaData).szSystemStatus);
+
+        writeLogs(logs, logFile);
+        return SUCCESS;
     }
 }

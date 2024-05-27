@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define SERIAL_LIMIT 8
 #define TITLE_LIMIT 256
 #define AUTHOR_LIMIT 256
 #define PUB_LIMIT 128
@@ -70,7 +71,12 @@ typedef struct log_struct
 } error_logs;
 
 bool readFileContents(book_entry *catalog, int *entries);
+
+// common functions
 void printEntry(book_entry *entry);
-void getTimeCurrentTimeLog(char *timeString);
-char *getOption(l_options option);
+void getCurrentTimeLog(char *timeString);
+const char *getOption(l_options option);
 void writeLogs(error_logs logs, std::ofstream &logFile);
+
+//common net functions
+bool initialiseWsa(WSADATA *wsaData, WORD wVersionRequested, std::ofstream &logFile);
